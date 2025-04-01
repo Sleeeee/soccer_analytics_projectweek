@@ -11,7 +11,7 @@ def get_transition_timestamps(match_id, conn):
     FROM matchevents e
     JOIN
         teams t ON e.ball_owning_team = t.team_id
-    WHERE e.match_id = '{match_id}'
+    WHERE e.match_id = '{match_id}' AND 
     ORDER BY timestamp
     """
 
@@ -86,7 +86,10 @@ def get_query_between_timestamps(query, filtered_data, conn) :
     timestamp_conditions = []
     for entry in filtered_data:
         start_time = entry['timestamp']
-        end_time = entry['end_timestamp']
+        try:
+            end_time = entry["end_timestamp"]
+        except KeyError:
+            end_time = entry["timestamp"]
         
         condition = f"(me.timestamp BETWEEN '{start_time}' AND '{end_time}')"
         timestamp_conditions.append(condition)
