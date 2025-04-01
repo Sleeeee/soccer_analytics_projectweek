@@ -1,14 +1,4 @@
-import re
 import pandas as pd
-import psycopg2
-import dotenv
-import os
-
-def timestamp_to_seconds(timestamp: str):
-    if not timestamp.endswith("000"):
-        timestamp += ".000000"
-    m = re.match(r'(\d+) days (\d\d):(\d\d):(\d\d)\.(\d+)', timestamp)
-    return (int(m.group(1)) * 24 * 60 * 60 * 1000000 + int(m.group(2)) * 60 * 60 * 1000000 + int(m.group(3)) * 60 * 1000000 + int(m.group(4)) * 1000000 + int(m.group(5))) / 1000000
 
 def get_transition_timestamps(match_id, conn):
     query = f"""
@@ -33,7 +23,7 @@ def get_transition_timestamps(match_id, conn):
         if i == 0: continue
         if row['team_name'] == current_team:
             continue
-        phase_list.append({'team': current_team, 'timestamp': timestamp_to_seconds(current_timestamp), 'original_timestamp': current_timestamp})
+        phase_list.append({'team': current_team, 'timestamp':  pd.Timedelta(current_timestamp).total_seconds(), 'original_timestamp': current_timestamp})
         current_team = row['team_name']
         current_timestamp = row['timestamp']
 
