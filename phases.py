@@ -88,3 +88,20 @@ def get_phase_timestamps(phase_name: str, team_name: str, timestamps: list):
                 "end_timestamp": next_event["original_timestamp"]
             })
     return filtered
+
+
+def get_query_between_timestamps(query, filtered_data, conn) :
+    query += 'AND ('
+
+    timestamp_conditions = []
+    for entry in filtered_data:
+        start_time = entry['timestamp']
+        end_time = entry['end_timestamp']
+        
+        condition = f"(me.timestamp BETWEEN '{start_time}' AND '{end_time}')"
+        timestamp_conditions.append(condition)
+
+    query += " OR ".join(timestamp_conditions)
+    query += ")"
+
+    return query
