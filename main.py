@@ -4,6 +4,7 @@ import psycopg2
 import dotenv
 
 from animation import render_animation
+from convex import display_convex
 from phases import get_phase_timestamps, get_transition_timestamps, get_query_between_timestamps
 
 def main():
@@ -23,6 +24,15 @@ def main():
         port=PG_PORT,
         sslmode="require",
     )
+
+    # display_convex("""
+    #     SELECT pt.frame_id, pt.timestamp, pt.player_id, pt.x, pt.y, p.jersey_number, p.player_name, p.team_id
+    #     FROM player_tracking pt
+    #     JOIN players p ON pt.player_id = p.player_id
+    #     JOIN teams t ON p.team_id = t.team_id
+    #     WHERE pt.game_id = '5uts2s7fl98clqz8uymaazehg' AND pt.frame_id = '1722799204000' AND p.team_id = '4dtif7outbuivua8umbwegoo5';
+    # """, conn)
+    # return
 
     render_animation('5uts2s7fl98clqz8uymaazehg', conn)
 

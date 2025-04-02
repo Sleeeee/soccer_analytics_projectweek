@@ -17,8 +17,7 @@ def lerp_series(x, y, t):
 def render_animation(match_id, conn):
     df = get_player_tracking(match_id, conn)
     home_away = get_home_away(match_id, conn)
-    print(home_away)
-    
+
     df['x'] = df['x'].map(lambda x: x / 100)
     df['y'] = df['y'].map(lambda x: x / 100)
 
@@ -27,14 +26,17 @@ def render_animation(match_id, conn):
     df_away = df[df['team_id'] == home_away['away_team_id']]
 
     pitch = Pitch(pitch_type='metricasports', goal_type='line', pitch_width=68, pitch_length=105)
-    fig, ax = pitch.draw(figsize=(16, 10.4))
+    fig, ax = pitch.draw(figsize=(8, 6))
 
     marker_kwargs = {'marker': 'o', 'markeredgecolor': 'black', 'linestyle': 'None'}
     ball, = ax.plot([], [], ms=10, markerfacecolor='#f00', zorder=3, **marker_kwargs)
     away, = ax.plot([], [], ms=10, markerfacecolor='#0f0', **marker_kwargs)
     home, = ax.plot([], [], ms=10, markerfacecolor='#00f', **marker_kwargs)
 
-    interpoplation_frames = 25
+    home_hull, = ax.fill([], [], "#0000ff55")
+    away_hull, = ax.fill([], [], "#00ff0055")
+
+    interpoplation_frames = 5
 
     def animate(i):
         if i % interpoplation_frames == 0:
@@ -45,6 +47,12 @@ def render_animation(match_id, conn):
                         df_away.loc[df_away.frame_id == frame, 'y'])
             home.set_data(df_home.loc[df_home.frame_id == frame, 'x'],
                         df_home.loc[df_home.frame_id == frame, 'y'])
+
+            home_convex_hull = pitch.convexhull(df_home.loc[df_home.frame_id == frame, 'x'], df_home.loc[df_home.frame_id == frame, 'y'])
+            home_hull.set_xy(home_convex_hull[0])
+
+            away_convex_hull = pitch.convexhull(df_away.loc[df_away.frame_id == frame, 'x'], df_away.loc[df_away.frame_id == frame, 'y'])
+            away_hull.set_xy(away_convex_hull[0])
         else:
             i_float = i/interpoplation_frames
             prev = int(math.floor(i_float))
@@ -63,19 +71,27 @@ def render_animation(match_id, conn):
 
             away_prev = df_away.loc[df_away.frame_id == frame_prev, 'x'], df_away.loc[df_away.frame_id == frame_prev, 'y']
             away_next = df_away.loc[df_away.frame_id == frame_next, 'x'], df_away.loc[df_away.frame_id == frame_next, 'y']
-            away.set_data([
+            away_data = [
                 lerp_series(away_prev[0].values, away_next[0].values, frac),
                 lerp_series(away_prev[1].values, away_next[1].values, frac)
-            ])
+            ]
+            away.set_data(away_data)
             
             home_prev = df_home.loc[df_home.frame_id == frame_prev, 'x'], df_home.loc[df_home.frame_id == frame_prev, 'y']
             home_next = df_home.loc[df_home.frame_id == frame_next, 'x'], df_home.loc[df_home.frame_id == frame_next, 'y']
-            home.set_data([
+            home_data = [
                 lerp_series(home_prev[0].values, home_next[0].values, frac),
                 lerp_series(home_prev[1].values, home_next[1].values, frac)
-            ])
+            ]
+            home.set_data(home_data)
 
-        return ball, away, home
+            home_convex_hull = pitch.convexhull(home_data[0], home_data[1])
+            home_hull.set_xy(home_convex_hull[0])
+
+            away_convex_hull = pitch.convexhull(away_data[0], away_data[1])
+            away_hull.set_xy(away_convex_hull[0])
+
+        return ball, away, home, home_hull, away_hull
 
     ani = animation.FuncAnimation(fig, animate, frames=len(df_ball) * interpoplation_frames, interval=40, blit=True)
     plt.show()
