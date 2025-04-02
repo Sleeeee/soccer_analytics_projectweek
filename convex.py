@@ -1,13 +1,7 @@
 import pandas as pd
-import psycopg2 
-import dotenv
-import os
 import matplotlib.pyplot as plt
 from mplsoccer import Pitch
 import matplotsoccer as mps
-from phases import get_phase_timestamps, get_query_between_timestamps, get_transition_timestamps
-
-
 
 def display_convex(query, conn) : 
     tracking_df = pd.read_sql_query(query, conn)
