@@ -34,18 +34,16 @@ def get_transition_timestamps(match_id, conn):
         if i == len(phase_list)-1:
             break
 
-        if phase_list[i+1]['timestamp'] - phase_list[i]['timestamp'] > 5:
-            phase = phase_list[i]
-            phase['possession'] = False
-            phase_list2.append(phase.copy())
+        phase = phase_list[i]
+        phase['possession'] = False
+        phase_list2.append(phase)
 
+        if phase_list[i+1]['timestamp'] - phase_list[i]['timestamp'] > 5:
+            phase = phase.copy()
             phase['possession'] = True
             phase['timestamp'] += 5
             phase_list2.append(phase)
-        else:
-            phase = phase_list[i]
-            phase['possession'] = False
-            phase_list2.append(phase)
+
     return phase_list2
 
 def get_phase_timestamps(phase_name: str, team_name: str, timestamps: list):
