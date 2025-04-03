@@ -6,7 +6,7 @@ import matplotsoccer
 import matplotlib.pyplot as plot
 from phases import get_transition_timestamps, get_query_between_timestamps, get_phase_timestamps
 
-def envent_bar(match_id, out_of_possess, ball_team, conn) :
+def event_bar(match_id, out_of_possess, ball_team, conn) :
     query = f"""
     SELECT et.name, t.team_name
     FROM players p
