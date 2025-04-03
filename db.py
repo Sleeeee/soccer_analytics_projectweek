@@ -7,7 +7,9 @@ def get_player_tracking(match_id, conn):
         y,
         pt.player_id,
         frame_id,
-        team_id
+        team_id,
+        timestamp,
+        period_id
     FROM player_tracking pt
     JOIN players p ON pt.player_id = p.player_id
     WHERE game_id = '{match_id}'

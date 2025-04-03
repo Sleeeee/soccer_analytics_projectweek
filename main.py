@@ -5,7 +5,7 @@ import dotenv
 
 from animation import render_animation
 from convex import display_convex
-from phases import get_phase_timestamps, get_transition_timestamps, get_query_between_timestamps
+from phases import get_phase_timestamps, get_phases, get_transition_timestamps, get_query_between_timestamps
 
 def main():
     dotenv.load_dotenv()
@@ -34,7 +34,7 @@ def main():
     # """, conn)
     # return
 
-    render_animation('5uts2s7fl98clqz8uymaazehg', conn)
+    render_animation('6zrmzdgg5dvdmghjcyp698pw4', 5, 0, conn)
 
     MATCH_ID = "5uts2s7fl98clqz8uymaazehg"
     PHASE_NAME = "out_of_possession"

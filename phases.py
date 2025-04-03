@@ -6,26 +6,26 @@ def get_transition_timestamps(match_id, conn):
         event_id,
         period_id,
         timestamp,
-        ball_owning_team,
-        t.team_name
+        ball_owning_team
+        -- t.team_name
     FROM matchevents e
-    JOIN
-        teams t ON e.ball_owning_team = t.team_id
+    -- JOIN
+    --     teams t ON e.ball_owning_team = t.team_id
     WHERE e.match_id = '{match_id}'
     ORDER BY period_id, timestamp
     """
 
     events_df = pd.read_sql_query(query, conn)
     current_timestamp = events_df.iloc[0]['timestamp']
-    current_team = events_df.iloc[0]['team_name']
+    current_team = events_df.iloc[0]['ball_owning_team']
     current_period = events_df.iloc[0]['period_id']
     phase_list = []
     for i, row in events_df.iterrows():
         if i == 0: continue
-        if row['team_name'] == current_team:
+        if row['ball_owning_team'] == current_team:
             continue
         phase_list.append({'team': current_team, 'timestamp': pd.Timedelta(current_timestamp).total_seconds(), 'original_timestamp': current_timestamp, 'period_id': current_period})
-        current_team = row['team_name']
+        current_team = row['ball_owning_team']
         current_timestamp = row['timestamp']
         current_period = row['period_id']
 
@@ -46,10 +46,25 @@ def get_transition_timestamps(match_id, conn):
 
     return phase_list2
 
-def get_phase_timestamps(phase_name: str, team_name: str, timestamps: list):
+def get_phases(team_id: str, phase_timestamps: list):
+    phases_list = []
+    for phase_timestamp in phase_timestamps:
+        if phase_timestamp['team'] == team_id:
+            if phase_timestamp['possession']:
+                phases_list.append({'phase': 'possession', 'timestamp': phase_timestamp['timestamp']})
+            else:
+                phases_list.append({'phase': 'transition to attack', 'timestamp': phase_timestamp['timestamp']})
+        else:
+            if phase_timestamp['possession']:
+                phases_list.append({'phase': 'out of possession', 'timestamp': phase_timestamp['timestamp']})
+            else:
+                phases_list.append({'phase': 'transition to defense', 'timestamp': phase_timestamp['timestamp']})
+    return phases_list
+
+def get_phase_timestamps(phase_name: str, team_id: str, timestamps: list):
     phase_map = {
         "possession": {
-            "team": team_name,
+            "team": team_id,
             "possession": True
         },
         "out_of_possession": {
@@ -57,7 +72,7 @@ def get_phase_timestamps(phase_name: str, team_name: str, timestamps: list):
             "possession": True
         },
         "transition_to_attack": {
-            "team": team_name,
+            "team": team_id,
             "possession": False
         },
         "transition_to_defense": {

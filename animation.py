@@ -1,8 +1,10 @@
 import math
+import pandas as pd
 from matplotlib import pyplot as plt, animation
 from mplsoccer import Pitch
 
 from db import get_home_away, get_player_tracking
+from phases import get_phases, get_transition_timestamps
 
 def lerp(x, y, t):
     return x + t * (y - x)
@@ -17,9 +19,10 @@ def lerp_series(x, y, t):
 def render_animation(match_id, interpolation, frame_interval, conn):
     df = get_player_tracking(match_id, conn)
     home_away = get_home_away(match_id, conn)
+    phases = get_phases(home_away['home_team_id'], get_transition_timestamps(match_id, conn))
 
-    df['x'] = df['x'].map(lambda x: x / 100)
-    df['y'] = df['y'].map(lambda y: y / 100)
+    df['x'] = df['x'].map(lambda x: 1 - (x / 100))
+    df['y'] = df['y'].map(lambda y: 1 - (y / 100))
 
     df_ball = df[df['player_id'] == 'ball']
     df_home = df[df['team_id'] == home_away['home_team_id']]
@@ -36,11 +39,23 @@ def render_animation(match_id, interpolation, frame_interval, conn):
     home_hull, = ax.fill([], [], "#0000ff55")
     away_hull, = ax.fill([], [], "#00ff0055")
 
+    info = ax.text(0, -0.01, '')
+
     interpolation += 1
+
+    next_phase = {'next_phase':1}
 
     def animate(i):
         if i % interpolation == 0:
             i //= interpolation
+
+            while phases[next_phase['next_phase']]['timestamp'] < pd.Timedelta(df_ball.iloc[i, 5]).total_seconds():
+                next_phase['next_phase'] += 1
+
+            timestamp_str = str(pd.Timedelta(df_ball.iloc[i, 5]).round('s')).replace('0 days', '')
+            current_phase = phases[next_phase['next_phase']-1]['phase']
+            info.set_text(f'Period: {df_ball.iloc[i, 6]}, Time: {timestamp_str}, Phase: {current_phase}')
+
             ball.set_data(df_ball.iloc[i, [0]], df_ball.iloc[i, [1]])
             frame = df_ball.iloc[i, 3]
             away.set_data(df_away.loc[df_away.frame_id == frame, 'x'], df_away.loc[df_away.frame_id == frame, 'y'])
@@ -89,7 +104,7 @@ def render_animation(match_id, interpolation, frame_interval, conn):
             away_convex_hull = pitch.convexhull(away_data[0], away_data[1])
             away_hull.set_xy(away_convex_hull[0])
 
-        return ball, away, home, home_hull, away_hull
+        return ball, away, home, home_hull, away_hull, info
 
     ani = animation.FuncAnimation(fig, animate, frames=len(df_ball) * interpolation, interval=frame_interval, blit=True)
     plt.show()
